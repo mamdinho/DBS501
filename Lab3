@@ -1,0 +1,149 @@
+Lab 3 By Mohammed Suleiman Mohamed Al-Falahy 
+
+QN1 OUTPUT CODE BELOW
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+TYPE coursetable_type IS TABLE OF
+COURSE.DESCRIPTION%TYPE
+INDEX BY PLS_INTEGER;
+coursetable coursetable_type;
+CURSOR course_cursor IS
+                      SELECT DESCRIPTION
+                      FROM COURSE
+                      WHERE PREREQUISITE IS NULL
+                      ORDER BY DESCRIPTION;
+v_counter NUMBER := 1;
+BEGIN
+OPEN course_cursor;
+LOOP
+    FETCH course_cursor INTO coursetable(v_counter);
+    EXIT WHEN course_cursor%NOTFOUND;
+    DBMS_OUTPUT.PUT_LINE('Course Description: ' || TO_CHAR(course_cursor%ROWCOUNT) || ': ' || coursetable(v_counter));
+ v_counter := v_counter + 1;
+END LOOP;
+v_counter := v_counter - 1;
+DBMS_OUTPUT.PUT_LINE('********************************************************');
+DBMS_OUTPUT.PUT_LINE('Total # of Courses without the Prerequisite is: ' || v_counter);
+END;
+/
+
+
+QN2 OUTPUT SOLUTION BELOW
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+TYPE course_table_type IS TABLE OF
+COURSE.DESCRIPTION%TYPE;
+course_table course_table_type := course_table_type();
+CURSOR course_cursor IS
+                     SELECT DESCRIPTION
+                     FROM COURSE
+                     WHERE PREREQUISITE IS NULL
+                     ORDER BY DESCRIPTION;
+v_counter NUMBER := 1;
+BEGIN
+--below loop implicitely opens, and fetches row from cursor
+FOR courserec IN course_cursor LOOP
+                                  course_table.EXTEND;
+                                  course_table(v_counter):= courserec.DESCRIPTION;
+                                  DBMS_OUTPUT.PUT_LINE('Course Description: ' || TO_CHAR(v_counter) || ': ' || course_table(v_counter));
+                                  v_counter := v_counter + 1;
+END LOOP; --implicit closes cursor
+v_counter := v_counter - 1;
+DBMS_OUTPUT.PUT_LINE('**********************************************************');
+DBMS_OUTPUT.PUT_LINE('Total # of Courses without the Prerequisite is: '|| v_counter);
+END;
+/
+
+
+QN3 OUTPUT CODE BELOW
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+ACCEPT zip PROMPT 'Enter the first 3 digits of a zip code: ';
+
+DECLARE
+TYPE emp_rec_type IS RECORD
+                         ( v_zip STUDENT.ZIP%TYPE,
+                           v_studentcount NUMBER(3));
+emp_rec emp_rec_type;
+v_zipval STUDENT.ZIP%TYPE := &zip;
+v_counterzip NUMBER := 0;
+v_counterstud NUMBER := 0;
+
+CURSOR empcursor IS
+                  SELECT ZIP, COUNT(*)
+                  FROM STUDENT
+                  WHERE ZIP LIKE '&zip' || '%' 
+                  GROUP BY ZIP
+                  ORDER BY ZIP;
+
+BEGIN
+OPEN empcursor;
+FETCH empcursor INTO emp_rec;
+IF empcursor%ROWCOUNT = 0 THEN
+  DBMS_OUTPUT.PUT_LINE('No data exists from zip code beginning with '|| '&zip');
+ELSE
+CLOSE empcursor;
+OPEN empcursor;     
+LOOP
+    FETCH empcursor INTO emp_rec;
+    EXIT WHEN empcursor%NOTFOUND;
+    DBMS_OUTPUT.PUT_LINE('Zip code: ' || emp_rec.v_zip || ' has exactly ' || emp_rec.v_studentcount || ' students enrolled');
+    v_counterzip := v_counterzip + 1;
+    v_counterstud := v_counterstud + emp_rec.v_studentcount;
+END LOOP;
+DBMS_OUTPUT.PUT_LINE('****************************************');
+DBMS_OUTPUT.PUT_LINE('Total # of zip codes under '|| '&zip' || ' is ' || v_counterzip);
+DBMS_OUTPUT.PUT_LINE('Total # of Students under zip code '|| '&zip' || ' is ' || v_counterstud);
+END IF;
+CLOSE empcursor;
+END;
+/
+
+
+QN4 OUTPUT CODE BELOW
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+ACCEPT zip PROMPT 'Enter the first 3 digits of a zip code: ';
+
+DECLARE
+TYPE ziptable_type IS TABLE OF
+STUDENT.ZIP%TYPE INDEX BY PLS_INTEGER;
+
+ziptable ziptable_type;
+
+CURSOR empcursor IS
+                  SELECT ZIP, COUNT(*) AS NUMSTUDENTS
+                  FROM STUDENT
+                  WHERE ZIP LIKE '&zip' || '%' 
+                  GROUP BY ZIP
+                  ORDER BY ZIP;
+emprec empcursor%ROWTYPE; --For handling unknowns
+counter NUMBER(3) := 1;
+totalstudent NUMBER(3) := 0;
+
+BEGIN
+OPEN empcursor;
+FETCH empcursor INTO emprec;
+IF empcursor%ROWCOUNT = 0 THEN
+                 DBMS_OUTPUT.PUT_LINE('No data exists from zip code beginning with '|| '&zip');
+ELSE
+   CLOSE empcursor;
+   FOR emp IN empcursor LOOP
+        ziptable(counter):= emp.ZIP;
+        DBMS_OUTPUT.PUT_LINE('Zip code: ' || ziptable(counter) || ' has exactly ' || emp.NUMSTUDENTS || ' students enrolled');
+        counter:= counter + 1;
+        totalstudent:= totalstudent + emp.NUMSTUDENTS;
+END LOOP;
+counter:= counter-1;
+DBMS_OUTPUT.PUT_LINE('****************************************');
+DBMS_OUTPUT.PUT_LINE('Total # of zip codes under '|| '&zip' || ' is ' || counter);
+DBMS_OUTPUT.PUT_LINE('Total # of Students under zip code '|| '&zip' || ' is ' || totalstudent);
+END IF;
+END;
+/
