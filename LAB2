@@ -1,0 +1,146 @@
+DBS 501 LAB2. MOHAMMED SULEIMAN MOHAMED AL-FALAHY.
+
+Question 1 Script Code below
+SET LINESIZE 130;
+SET PAGESIZE 130;
+SET SERVEROUTPUT ON
+SET VERIFY OFF 
+
+ACCEPT scale PROMPT 'Enter your input scale (C or F) for temperature: ';
+ACCEPT temperature PROMPT 'Enter your temperature value to be converted: ';
+
+DECLARE
+v_scale CHAR(1) := '&scale';
+v_temp NUMBER(5,1) := '&temperature';
+
+BEGIN
+IF UPPER(v_scale) = ('F') THEN
+   v_temp := (v_temp - 32) * 5/9;
+   DBMS_OUTPUT.PUT_LINE ('You converted temperature in C is exactly ' || TO_CHAR(v_temp));
+ELSIF UPPER(v_scale) = ('C') THEN
+   v_temp := (v_temp * 9/5) + 32;
+   DBMS_OUTPUT.PUT_LINE ('You converted temperature in F is exactly ' || TO_CHAR(v_temp));
+ELSE
+   DBMS_OUTPUT.PUT_LINE ('This is NOT a valid scale. Must be C or F.');
+END IF;
+END;
+
+/
+
+
+
+Qn2 script code below
+
+SET LINESIZE 130;
+SET PAGESIZE 130;
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+ACCEPT id PROMPT 'Please enter the Instructor Id: ';
+
+DECLARE
+v_id NUMBER := '&id';
+v_name INSTRUCTOR.FIRST_NAME%TYPE;
+v_section_count NUMBER;
+v_message VARCHAR(100);
+
+BEGIN
+
+Select first_name || ' ' || last_name INTO v_name
+From instructor
+Where v_id = instructor_id;
+
+Select COUNT(SECTION_ID) 
+into v_section_count
+From section
+where v_id= instructor_id;
+
+DBMS_OUTPUT.PUT_LINE('Instructor ' || v_name || ' , teaches ' || v_section_count || ' section(s)');
+
+v_message := CASE 
+	WHEN v_section_count > 9 THEN 'This instructor needs to rest in the next term.'
+	WHEN v_section_count = 9 THEN 'This instructor teaches enough sections.'
+	ELSE 'This instructor may teach more sections.'
+	
+	END;
+	DBMS_OUTPUT.PUT_LINE(v_message);
+	EXCEPTION
+	WHEN NO_DATA_FOUND THEN DBMS_OUTPUT.PUT_LINE('This is not a valid instructor');
+	
+END;
+
+/
+
+
+QN 3 OUTPUT SOLUTION BELOW
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+ACCEPT int PROMPT 'Please enter a positive integer: ';
+
+DECLARE
+v_num NUMBER := &int;
+v_counter NUMBER;
+v_sumTotal NUMBER := 0;
+BEGIN
+IF v_num < 0 THEN DBMS_OUTPUT.PUT_LINE('Please enter a positive integer');
+ELSE
+    IF MOD(v_num,2)=0 THEN --Means the number is even
+    v_counter := v_num;
+    WHILE (v_counter > 0) LOOP
+    v_sumTotal := v_sumTotal + v_counter;
+    v_counter := v_counter - 2;
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE('The sum of even integers between 1 and ' || v_num || ' is ' || v_sumTotal);
+    ELSE                     --Means the Number is odd
+    v_counter := v_num;
+    WHILE (v_counter > 0) LOOP
+    v_sumTotal := v_sumTotal + v_counter;
+    v_counter := v_counter - 2;
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE('The sum of odd integers between 1 and ' || v_num || ' is ' || v_sumTotal);
+    END IF;
+END IF;
+END;
+/
+
+
+
+QN 4 OUTPUT SOLUTION BELOW
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+UPDATE DEPARTMENTS SET LOCATION_ID = 1400
+WHERE DEPARTMENT_ID IN (40,70);
+
+ACCEPT dep PROMPT 'Enter a valid Location id: ';
+
+DECLARE
+v_locId LOCATIONS.LOCATION_ID%TYPE := &dep;
+v_deptId DEPARTMENTS.DEPARTMENT_ID%TYPE := 80;
+v_counterDepartments NUMBER;
+v_counterEmployees NUMBER;
+BEGIN
+SELECT COUNT(*) 
+INTO   v_counterDepartments
+FROM   DEPARTMENTS
+WHERE  LOCATION_ID = v_locId;
+SELECT COUNT(*)
+INTO   v_counterEmployees
+FROM   EMPLOYEES
+WHERE  DEPARTMENT_ID IN ( 
+                     SELECT DEPARTMENT_ID
+                     FROM DEPARTMENTS
+                     WHERE LOCATION_ID = v_locId
+);
+FOR i IN 1..v_counterDepartments LOOP
+DBMS_OUTPUT.PUT_LINE('Outer Loop: Department#' || i);
+FOR j IN 1..v_counterEmployees LOOP
+DBMS_OUTPUT.PUT_LINE('Inner Loop: Employee#' || j);
+END LOOP;--end inner loop
+END LOOP;-- end outer loop
+EXCEPTION WHEN NO_DATA_FOUND THEN DBMS_OUTPUT.PUT_LINE('Location id entered does not exist. Please enter a valid location id');
+END;
+ROLLBACK;
+/
+
