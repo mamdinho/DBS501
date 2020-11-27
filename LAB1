@@ -1,0 +1,170 @@
+Mohammed Suleiman Mohammed LAB1 DBS501
+
+Qn1 Output
+
+Local V_MINE is here 700
+Outer V_MINE is here 500
+Outer V_MINE is here 1400
+
+Qn2 SQL STATEMENT
+
+DECLARE
+--Declaring and initializing variables
+v_courseName VARCHAR2(29);
+v_Num NUMBER (8,2);
+v_roomName CONSTANT VARCHAR2(4) := '704B';
+v_flag BOOLEAN;
+v_date DATE := SYSDATE + 7;
+BEGIN
+         --Below code will only print out vaariables that were initialized
+DBMS_OUTPUT.PUT_LINE('Value of v_roomName is ' || v_roomName);
+DBMS_OUTPUT.PUT_LINE('Value of date is ' || v_date);
+v_courseName := 'C++'; --Testing by giving course name a value
+IF UPPER(v_courseName) LIKE('%SQL%') THEN
+DBMS_OUTPUT.PUT_LINE('Course Name ' || v_courseName);
+ELSIF v_roomName LIKE('704B') THEN
+         --Begin nested if statement if above condition passes
+IF v_courseName IS NOT NULL THEN
+DBMS_OUTPUT.PUT_LINE('Course Name ' || v_courseName || ' Room name ' || v_roomName);
+ELSE
+DBMS_OUTPUT.PUT_LINE('Course is unknown. Room name ' || v_roomName);
+END IF;
+         --if neither conditions in above outer if statement passed execute below
+ELSE
+DBMS_OUTPUT.PUT_LINE('Course code and location could not be determined');
+END IF;
+END;
+/
+
+
+QN3 Solution
+	•	Create Table Lab1_tab Statement Below
+
+CREATE TABLE LAB1_TAB
+(
+  Id NUMERIC , LName Varchar2(20)
+);
+
+
+
+
+	•	Create Sequence that starts with 1 and increments by 5 below
+
+CREATE SEQUENCE Lab1_seq
+INCREMENT BY 5
+START WITH 1
+NOMAXVALUE
+
+
+
+Part C code below
+
+DECLARE
+    v_LName student.last_name%TYPE;
+    v_ID student.student_ID%TYPE;
+BEGIN
+    BEGIN
+	
+    SELECT last_name
+    INTO v_LName
+    FROM student
+    where student_ID IN (
+				SELECT student_ID
+				from Enrollment
+				Group BY student_ID
+				HAVING COUNT(*) = (
+						      SELECT MAX(COUNT(student_ID))
+						      FROM Enrollment
+						      GROUP BY student_ID))
+    AND LENGTH(last_name) < 9;
+   
+   INSERT INTO Lab1_tab
+   VALUES (Lab1_seq.NEXTVAL, v_LName);
+   
+   EXCEPTION
+   WHEN TOO_MANY_ROWS THEN
+   v_lname := 'Multiple Names';
+   
+   END;
+  
+   BEGIN
+   
+    SELECT last_name
+    INTO v_LName
+    FROM student
+    where student_ID IN (
+				SELECT student_ID
+				from Enrollment
+				Group BY student_ID
+				HAVING COUNT(student_ID) = (
+							SELECT MIN(COUNT(student_ID))
+							FROM Enrollment
+							GROUP BY student_ID));
+   EXCEPTION
+   WHEN TOO_MANY_ROWS THEN
+   v_lname := 'Multiple Names'; 
+		
+   INSERT INTO Lab1_tab
+   VALUES (Lab1_seq.NEXTVAL, v_LName);		
+   
+   
+   END;
+
+   BEGIN
+   
+    SELECT last_name
+    INTO v_LName
+    FROM INSTRUCTOR 
+    where INSTRUCTOR_ID IN (
+					SELECT INSTRUCTOR_ID
+					from SECTION
+					Group BY INSTRUCTOR_ID
+					HAVING COUNT(INSTRUCTOR_ID) = (
+							SELECT MIN(COUNT(INSTRUCTOR_ID))
+							 FROM SECTION
+							 GROUP BY INSTRUCTOR_ID))
+   AND last_name NOT LIKE '%s';               
+
+   INSERT INTO Lab1_tab
+   VALUES (V_ID, v_LName);	
+   
+   EXCEPTION
+   WHEN TOO_MANY_ROWS THEN
+   v_lname := 'Multiple Names';  
+ 
+   END;
+
+   
+   BEGIN
+   
+    SELECT last_name
+    INTO v_LName
+    FROM INSTRUCTOR 
+    where INSTRUCTOR_ID IN (
+					SELECT INSTRUCTOR_ID
+					from SECTION
+					Group BY INSTRUCTOR_ID
+					HAVING COUNT(INSTRUCTOR_ID) = (
+								SELECT 			   MAX(COUNT(INSTRUCTOR_ID))
+								FROM SECTION
+								GROUP BY INSTRUCTOR_ID))
+    AND last_name NOT LIKE '%s';
+						  
+   EXCEPTION
+   WHEN TOO_MANY_ROWS THEN
+   v_lname := 'Multiple Names'; 
+
+   INSERT INTO Lab1_tab
+   VALUES (LAB1_seq.NEXTVAL, v_LName);		
+		
+   
+   END; 
+END;
+
+
+
+
+Screenshot below
+
+
+
