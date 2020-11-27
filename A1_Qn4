@@ -1,0 +1,50 @@
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+ACCEPT prog PROMPT 'Enter key1 for the program name: ';
+ACCEPT prog2 PROMPT 'Enter key2 for the program name: ';
+
+DECLARE
+CURSOR sectioncursor IS
+SELECT COURSE_NO, DESCRIPTION
+FROM COURSE
+WHERE UPPER(DESCRIPTION) LIKE UPPER('%&prog%') 
+AND UPPER(DESCRIPTION) LIKE UPPER('%&prog2%')
+ORDER BY 1;
+
+CURSOR enrollmentcursor (coursenum SECTION.COURSE_NO%TYPE) IS
+SELECT COUNT(e.STUDENT_ID) AS NUMENROLLED, s.SECTION_NO
+FROM SECTION s LEFT OUTER JOIN ENROLLMENT e
+ON s.SECTION_ID = e.SECTION_ID
+WHERE s.COURSE_NO = coursenum
+GROUP BY S.SECTION_NO;
+
+sectionrow sectioncursor%ROWTYPE;
+enrollmentrow enrollmentcursor%ROWTYPE;
+
+BEGIN
+OPEN sectioncursor;
+FETCH sectioncursor INTO sectionrow;
+IF sectioncursor%ROWCOUNT = 0 THEN 
+      DBMS_OUTPUT.PUT_LINE('There is NO course containing these 2 words. Please try again');
+ELSE
+CLOSE sectioncursor;
+FOR sect IN sectioncursor LOOP
+        DBMS_OUTPUT.PUT_LINE(sect.COURSE_NO || ' ' || sect.DESCRIPTION);
+        DBMS_OUTPUT.PUT_LINE('*********************************************************');
+        OPEN enrollmentcursor(sect.COURSE_NO); --Check if we have rows
+        FETCH enrollmentcursor INTO enrollmentrow;
+        IF enrollmentcursor%ROWCOUNT = 0 THEN 
+               DBMS_OUTPUT.PUT_LINE('This course has no assigned sections');
+        ELSE
+               CLOSE enrollmentcursor;
+               FOR enroll IN enrollmentcursor(sect.COURSE_NO) LOOP
+                   DBMS_OUTPUT.PUT_LINE('Section: ' || enroll.SECTION_NO || ' has an enrollment of: ' || enroll.NUMENROLLED);
+               END LOOP;
+        END IF;
+END LOOP;
+END IF;
+END;
+/
+                    
+                
