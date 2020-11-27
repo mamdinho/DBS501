@@ -1,0 +1,167 @@
+LAB4 BY MOHAMMED SULEIMAN MOHAMED AL-FALAHY
+
+QN1 SOLUTION
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+CREATE PROCEDURE mine (p_date VARCHAR2 , p_type CHAR) IS
+v_date DATE;
+v_size NUMBER;
+v_day VARCHAR2(15);
+e_exception EXCEPTION;
+BEGIN
+v_date:= TO_DATE(p_date, 'MM/YY');
+v_day := TO_CHAR(LAST_DAY(v_date) , 'Day');
+
+DBMS_OUTPUT.PUT_LINE('Last day of the month ' || p_date || ' is ' || v_day);
+
+IF UPPER(p_type) = 'P' OR UPPER(p_type) = 'F' OR UPPER(p_type) = 'B' THEN
+SELECT COUNT(*) INTO v_size
+FROM USER_OBJECTS
+WHERE UPPER(OBJECT_TYPE) LIKE UPPER(p_type) || '%'; 
+ELSE
+RAISE e_exception;
+END IF;
+
+DBMS_OUTPUT.PUT_LINE('Number of stored objects of type ' || UPPER(p_type) || ' is ' || v_size);
+
+EXCEPTION
+WHEN e_exception THEN DBMS_OUTPUT.PUT_LINE('You have entered an invalid letter for the stored object. Try P,F or B');
+WHEN NO_DATA_FOUND THEN v_size:= 0;
+WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('You have entered invalid FORMAT for the MONTH and YEAR. Try MM/YY');
+
+END mine;
+/
+
+
+QN2 SOLUTION
+
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+CREATE OR REPLACE PROCEDURE add_zip(p_zip ZIPCODE.ZIP%TYPE, p_city ZIPCODE.CITY%TYPE, p_state ZIPCODE.STATE%TYPE, p_message OUT VARCHAR2, p_numrows OUT NUMBER)
+IS
+v_user ZIPCODE.CREATED_BY%TYPE;
+v_createddate DATE;
+v_dummy ZIPCODE.ZIP%TYPE;
+BEGIN
+p_message := 'FAILURE';
+SELECT USER, SYSDATE INTO v_user, v_createddate
+FROM DUAL;
+
+SELECT ZIP INTO v_dummy
+FROM ZIPCODE
+WHERE ZIP = p_zip;
+
+SELECT COUNT(*) INTO p_numrows
+FROM ZIPCODE
+WHERE STATE = p_state;
+
+EXCEPTION
+WHEN NO_DATA_FOUND THEN 
+INSERT INTO ZIPCODE VALUES(p_zip, p_city, p_state, v_user, v_createddate, v_user, v_createddate);
+p_message := 'SUCCESS';
+
+SELECT COUNT(*) INTO p_numrows
+FROM ZIPCODE
+WHERE STATE = p_state;
+END add_zip;
+/
+
+
+
+
+QN 3 SOLUTION
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+CREATE FUNCTION exist_zip (p_zip ZIPCODE.ZIP%TYPE)
+RETURN BOOLEAN
+IS
+v_dummy ZIPCODE.ZIP%TYPE;
+BEGIN
+SELECT ZIP INTO v_dummy
+FROM ZIPCODE
+WHERE ZIP = p_zip;
+RETURN TRUE;
+
+EXCEPTION
+WHEN NO_DATA_FOUND THEN RETURN FALSE;
+END exist_zip;
+/
+
+PROCEDURE BELOW
+
+CREATE PROCEDURE add_zip2(p_zip ZIPCODE.ZIP%TYPE, p_city ZIPCODE.CITY%TYPE, p_state ZIPCODE.STATE%TYPE, p_message OUT VARCHAR2, p_numrows OUT NUMBER)
+IS
+v_user ZIPCODE.CREATED_BY%TYPE;
+v_createddate DATE;
+v_flag BOOLEAN;
+BEGIN
+p_message := 'FAILURE';
+SELECT USER, SYSDATE INTO v_user, v_createddate
+FROM DUAL;
+
+v_flag := exist_zip(p_zip);
+IF v_flag THEN
+DBMS_OUTPUT.PUT_LINE('The ZIPCODE ' || p_zip || ' is already in the Database. Try again');
+SELECT COUNT(*) INTO p_numrows
+FROM ZIPCODE
+WHERE STATE = p_state;
+ELSE 
+INSERT INTO ZIPCODE VALUES(p_zip, p_city, p_state, v_user, v_createddate, v_user, v_createddate);
+p_message := 'SUCCESS';
+
+SELECT COUNT(*) INTO p_numrows
+FROM ZIPCODE
+WHERE STATE = p_state;
+END IF;
+END add_zip2;
+/
+
+
+QN4 SOLUTION BELOW
+
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+CREATE OR REPLACE function instruct_status(
+p_first instructor.first_name%TYPE,
+p_last instructor.last_name%TYPE
+) 
+RETURN VARCHAR2
+IS
+
+v_instructor_id instructor.instructor_id%TYPE;
+v_sections NUMBER;
+V_message varchar2(100);
+
+BEGIN
+	SELECT instructor_id into v_instructor_id from instructor
+	where first_name = p_first
+	and last_name = p_last;
+	
+	SELECT COUNT(*) into v_sections from section
+	where instructor_id = v_instructor_id;
+	
+	IF (v_sections > 9) THEN
+	v_message := 'This Instructor will teach 10 course and needs a vacation';
+	ELSIF (v_sections > 0 AND v_sections <= 9) THEN
+	v_message := 'This Instructor will teach ' || v_sections || ' courses';
+	ELSE
+	v_message := 'This Instructor is NOT scheduled to teach ';	
+	END IF;
+	
+	RETURN v_message;
+	
+
+	EXCEPTION
+	WHEN NO_DATA_FOUND THEN
+	v_message := 'There is NO such instructor'; 
+	RETURN v_message;
+	WHEN OTHERS THEN
+	v_message := 'Error Occured';
+	RETURN v_message;
+
+END instruct_status;
+/
